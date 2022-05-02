@@ -21,6 +21,12 @@ In the OBS browser source you can change some CSS to adjust the styling of the h
 
 ---
 
+## TODO
+
+- hide bpm if connection is lost
+
+---
+
 ## Version History
 
 ### v0.1
