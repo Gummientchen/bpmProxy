@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Heartbeat Sensor</title>
+    <style>
+      :root {
+        --font-size: 5rem;
+      }
+
+      body {
+        background-color: #111;
+        font-family: "Roboto", sans-serif;
+        padding: 2rem;
+      }
+
+      .bpm__container {
+        display: flex;
+        align-items: center;
+      }
+
+      .bpm-number {
+        color: #eee;
+        font-size: var(--font-size);
+        padding-left: 1rem;
+      }
+
+      .heart {
+        width: var(--font-size);
+        height: var(--font-size);
+        transform-origin: center;
+      }
+
+      .heart path {
+        fill: #e00;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bpm__container">
+      <div class="bpm-heart">
+        <svg
+          class="heart"
+          xmlns="http://www.w3.org/2000/svg"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          version="1.1"
+          width="200"
+          height="200"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5C2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z"
+          />
+        </svg>
+      </div>
+      <div class="bpm-number"></div>
+    </div>
+    <script>
+      Number.prototype.map = function (in_min, in_max, out_min, out_max) {
+        return (
+          ((this - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min
+        );
+      };
+
+      let heart = document.querySelector(".heart");
+      let bpmNumber = document.querySelector(".bpm-number");
+
+      // const animationKeyframes = [{ transform: "scale(1.2)" }];
+
+      let animationKeyframes = new KeyframeEffect(
+        heart,
+        [{ transform: "scale(1.2)" }],
+        {
+          duration: 30000,
+          iterations: Infinity,
+          direction: "alternate",
+          easing: "ease-out",
+        }
+      );
+
+      // const animationOptions = {
+      //   duration: 30000,
+      //   iterations: Infinity,
+      //   direction: "alternate",
+      //   easing: "ease-out",
+      // };
+
+      let heartAnimation = new Animation(animationKeyframes, document.timeline);
+
+      heartAnimation.play();
+
+      function updateBpm(bpmArray) {
+        count = bpmArray[0];
+        datestring = bpmArray[1];
+        bpm = Number(bpmArray[3]);
+        min = bpmArray[4];
+        max = bpmArray[5];
+
+        let heartScaling = Math.round(bpm.map(60, 200, 1.1, 1.8) * 100) / 100;
+
+        heartScaling > 1.8 ? (heartScaling = 1.8) : false;
+        heartScaling < 1.1 ? (heartScaling = 1.1) : false;
+
+        console.log(heartScaling);
+        let newKeyframes = [{ transform: "scale(" + heartScaling + ")" }];
+
+        heartAnimation.updatePlaybackRate(bpm);
+        animationKeyframes.setKeyframes(newKeyframes);
+        bpmNumber.innerHTML = bpm;
+      }
+
+      function connect() {
+        var ws = new WebSocket("ws://127.0.0.1:8765/");
+
+        ws.onopen = function () {};
+
+        ws.onmessage = function (e) {
+          bpm = event.data.split(";");
+
+          updateBpm(bpm);
+        };
+
+        ws.onclose = function (e) {
+          console.log(
+            "Socket is closed. Reconnect will be attempted in 1 second.",
+            e.reason
+          );
+          setTimeout(function () {
+            connect();
+          }, 1000);
+        };
+
+        ws.onerror = function (err) {
+          console.error(
+            "Socket encountered error: ",
+            err.message,
+            "Closing socket"
+          );
+          ws.close();
+        };
+      }
+
+      connect();
+    </script>
+  </body>
+</html>
