@@ -1,18 +1,16 @@
-# BPM Proxy
+# bpmProxy
 
 ![Example Screenshot of bpmProxy](assets/screenshot.png)  
 This tool allows you to use [Cardia](https://github.com/uwburn/cardia) to connect a heart beat sensor and display it in OBS with a browser source.
 
 ## Installation/Usage
 
-Download Cardia from their official GitHub Repository -> https://github.com/uwburn/cardia/releases
-
-Start Cardia and go to "Log". Enable logging and choose "UDP" as the log format. Use IP address "127.0.0.1" and Port "60900".
-
-Start bpmProxy.exe
-
-Add a browser source to any scene in OBS. Use the following URL: `http://127.0.0.1:8765/`  
-Set the **width** to 1920 and **height** to 1080.
+1. Download Cardia from their official GitHub Repository -> https://github.com/uwburn/cardia/releases
+1. Start Cardia and go to "Log". Enable logging and choose "UDP" as the log format. Use IP address "127.0.0.1" and Port "60900".
+1. Press the "Start" button in Cardia.
+1. Start bpmProxy.exe
+1. Add a browser source to any scene in OBS. Use the following URL: `http://127.0.0.1:8765/`
+1. Set the **width** to 1920 and **height** to 1080.
 
 ## Customizing styles
 
