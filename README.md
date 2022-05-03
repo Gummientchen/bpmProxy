@@ -3,6 +3,12 @@
 ![Example Screenshot of bpmProxy](assets/screenshot.png)  
 This tool allows you to use [HeartRate](https://github.com/jlennox/HeartRate) to connect a heart beat sensor and display it in OBS with a browser source.
 
+## Features
+
+- Browser source for heartrate in OBS
+- Heart animation based on heartrate (size and speed)
+- Hides automatically if connection is lost. Reappears if connection is reestablished.
+
 ## Installation/Usage
 
 First run:
