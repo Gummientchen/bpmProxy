@@ -3,6 +3,7 @@ import asyncio
 import functools
 import websockets
 import socket
+from datetime import datetime
 from http import HTTPStatus
 
 MIME_TYPES = {
@@ -18,6 +19,9 @@ UDP_PORT = 60900
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((UDP_IP, UDP_PORT))
 
+globalBpm = ""
+
+## Serves static index.html file
 async def process_request(sever_root, path, request_headers):
   """Serves a file when doing a GET request with a valid path."""
 
@@ -52,26 +56,38 @@ async def process_request(sever_root, path, request_headers):
   print("HTTP GET {} 200 OK".format(path))
   return HTTPStatus.OK, response_headers, body
 
+## listens for new messages on UDP
+def udpReceive(loop):
+  data, addr = sock.recvfrom(128) # buffer size is 1024 bytes
+  global globalBpm
+  globalBpm = data.decode("utf-8")
+  
+  loop.call_later(0.1, udpReceive, loop)
 
-async def time(websocket, path):
+## handle websocket connection
+async def wsBpm(websocket, path):
   print("New WebSocket connection from", websocket.remote_address)
   while websocket.open:
-    data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-    # print("received message: %s" % data)
+    dt = datetime.now()
+    ts = datetime.timestamp(dt)
 
-    # now = datetime.datetime.utcnow().isoformat() + "Z"
-    await websocket.send(data.decode("utf-8"))
+    await websocket.send(str(round(ts*1000))+","+globalBpm.strip())
     await asyncio.sleep(0.1)
   # This print will not run when abrnomal websocket close happens
   # for example when tcp connection dies and no websocket close frame is sent
   print("WebSocket connection closed for", websocket.remote_address)
 
-
 if __name__ == "__main__":
   # set first argument for the handler to current working directory
   handler = functools.partial(process_request, os.getcwd())
-  start_server = websockets.serve(time, '127.0.0.1', 8765, process_request=handler)
+  start_server = websockets.serve(wsBpm, '127.0.0.1', 8765, process_request=handler)
   print("Running server at http://127.0.0.1:8765/")
 
+  # start udp client
+  loop = asyncio.get_event_loop()
+  loop.call_soon(udpReceive, loop)
+
+  # start websocket server
   asyncio.get_event_loop().run_until_complete(start_server)
   asyncio.get_event_loop().run_forever()
+
