@@ -9,6 +9,7 @@
       let minBpm = 60;
       let maxBpm = 120;
 
+      // leave these like they are
       let bpmContainer;
       let heart;
       let bpmNumber;
@@ -79,7 +80,6 @@
 
         ws.onmessage = function (e) {
           let data = JSON.parse(event.data);
-          // bpm = event.data.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
 
           updateBpm(data);
           updateMinMax(data["bpm"]);
