@@ -12,15 +12,40 @@
       let bpmContainer;
       let heart;
       let bpmNumber;
+      let minMaxContainer;
+      let hMinBpmContainer;
+      let hMaxBpmContainer;
       let animationKeyframes;
       let heartAnimation;
       let lastMessageTime = false;
+      let showMinMax = false;
+
+      let hMinBpm = false;
+      let hMaxBpm = false;
 
       Number.prototype.map = function (in_min, in_max, out_min, out_max) {
         return (
           ((this - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min
         );
       };
+
+      // Update min and max display
+      function updateMinMax(bpm) {
+        if (showMinMax) {
+          if (hMinBpm == false || hMinBpm > Number(bpm)) {
+            hMinBpm = Number(bpm);
+            hMinBpmContainer.innerHTML = hMinBpm + " min";
+          }
+
+          if (hMaxBpm == false || hMaxBpm < Number(bpm)) {
+            hMaxBpm = Number(bpm);
+            hMaxBpmContainer.innerHTML = hMaxBpm + " max";
+          }
+        } else {
+          console.log("minmax disabled");
+        }
+        console.log("minmax updated");
+      }
 
       function hideBpm() {
         bpmContainer.classList.remove("show");
@@ -34,8 +59,8 @@
 
       function updateBpm(bpmArray) {
         console.log(bpmArray);
-        lastMessageTime = Number(bpmArray[0]);
-        bpm = Number(bpmArray[2]);
+        lastMessageTime = Number(bpmArray["ms"]);
+        bpm = Number(bpmArray["bpm"]);
 
         let heartScaling =
           Math.round(bpm.map(minBpm, maxBpm, minScale, maxScale) * 100) / 100;
@@ -56,9 +81,11 @@
         ws.onopen = function () {};
 
         ws.onmessage = function (e) {
-          bpm = event.data.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+          let data = JSON.parse(event.data);
+          // bpm = event.data.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
 
-          updateBpm(bpm);
+          updateBpm(data);
+          updateMinMax(data["bpm"]);
 
           showBpm();
         };
@@ -92,10 +119,40 @@
         setTimeout(aliveCheck, 5000);
       }
 
+      // update options given by hash
+      function updateOptions() {
+        if (window.location.hash) {
+          var hash = window.location.hash.substring(1);
+
+          // show min/max BPM?
+          if (hash.includes("minmax")) {
+            showMinMax = true;
+            minMaxContainer.classList.remove("hidden");
+          } else {
+            showMinMax = false;
+            minMaxContainer.classList.add("hidden");
+          }
+        }
+      }
+
+      window.addEventListener(
+        "hashchange",
+        function () {
+          updateOptions();
+        },
+        false
+      );
+
       window.onload = function () {
         bpmContainer = document.querySelector(".bpm__container");
         heart = document.querySelector(".heart");
         bpmNumber = document.querySelector(".bpm-number");
+
+        minMaxContainer = document.querySelector(".bpm-minmax-container");
+        hMinBpmContainer = document.querySelector(".bpm-min");
+        hMaxBpmContainer = document.querySelector(".bpm-max");
+
+        updateOptions();
 
         animationKeyframes = new KeyframeEffect(
           heart,
@@ -119,6 +176,7 @@
     <style>
       :root {
         --font-size: 5rem;
+        --font-color: #eee;
       }
 
       body {
@@ -134,8 +192,14 @@
       }
 
       .bpm-number {
-        color: #eee;
+        color: var(--font-color);
         font-size: var(--font-size);
+        padding-left: 1rem;
+      }
+
+      .bpm-minmax-container {
+        color: var(--font-color);
+        font-size: calc(var(--font-size) / 3);
         padding-left: 1rem;
       }
 
@@ -158,6 +222,10 @@
         opacity: 1;
         transition: opacity 0.5s ease;
       }
+
+      .hidden {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -178,6 +246,10 @@
         </svg>
       </div>
       <div class="bpm-number"></div>
+      <div class="bpm-minmax-container hidden">
+        <div class="bpm-min"></div>
+        <div class="bpm-max"></div>
+      </div>
     </div>
   </body>
 </html>

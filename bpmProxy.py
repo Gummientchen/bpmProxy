@@ -3,6 +3,8 @@ import asyncio
 import functools
 import websockets
 import socket
+import json
+import csv
 from datetime import datetime
 from http import HTTPStatus
 
@@ -70,8 +72,20 @@ async def wsBpm(websocket, path):
   while websocket.open:
     dt = datetime.now()
     ts = datetime.timestamp(dt)
+    ms = round(ts*1000)
 
-    await websocket.send(str(round(ts*1000))+","+globalBpm.strip())
+    r = ""
+    for row in csv.reader([globalBpm.strip()]):
+      r = row
+
+    jsonResponse = json.dumps({
+      'ms': ms,
+      'bpm': r[1],
+      'ibi': r[4]
+      })
+
+    await websocket.send(jsonResponse)
+    # await websocket.send(str(ms)+","+globalBpm.strip())
     await asyncio.sleep(0.1)
   # This print will not run when abrnomal websocket close happens
   # for example when tcp connection dies and no websocket close frame is sent
