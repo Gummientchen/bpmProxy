@@ -41,10 +41,7 @@
             hMaxBpm = Number(bpm);
             hMaxBpmContainer.innerHTML = hMaxBpm + " max";
           }
-        } else {
-          console.log("minmax disabled");
         }
-        console.log("minmax updated");
       }
 
       function hideBpm() {
@@ -135,6 +132,7 @@
         }
       }
 
+      // listen for hash changes and update options
       window.addEventListener(
         "hashchange",
         function () {
@@ -188,19 +186,18 @@
       .bpm__container {
         display: flex;
         align-items: center;
+        gap: 1.5rem;
         opacity: 0;
       }
 
       .bpm-number {
         color: var(--font-color);
         font-size: var(--font-size);
-        padding-left: 1rem;
       }
 
       .bpm-minmax-container {
         color: var(--font-color);
-        font-size: calc(var(--font-size) / 3);
-        padding-left: 1rem;
+        font-size: calc(var(--font-size) / 4);
       }
 
       .heart {
