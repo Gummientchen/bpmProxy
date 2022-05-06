@@ -2,6 +2,120 @@
 <html>
   <head>
     <title>Heartbeat Sensor</title>
+    <script>
+      // set your settings here
+      let minScale = 1.1;
+      let maxScale = 1.8;
+      let minBpm = 60;
+      let maxBpm = 120;
+
+      let bpmContainer;
+      let heart;
+      let bpmNumber;
+      let animationKeyframes;
+      let heartAnimation;
+      let lastMessageTime = false;
+
+      Number.prototype.map = function (in_min, in_max, out_min, out_max) {
+        return (
+          ((this - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min
+        );
+      };
+
+      function hideBpm() {
+        bpmContainer.classList.remove("show");
+        bpmContainer.classList.add("hide");
+      }
+
+      function showBpm() {
+        bpmContainer.classList.remove("hide");
+        bpmContainer.classList.add("show");
+      }
+
+      function updateBpm(bpmArray) {
+        console.log(bpmArray);
+        lastMessageTime = Number(bpmArray[0]);
+        bpm = Number(bpmArray[2]);
+
+        let heartScaling =
+          Math.round(bpm.map(minBpm, maxBpm, minScale, maxScale) * 100) / 100;
+
+        heartScaling > maxScale ? (heartScaling = maxScale) : false;
+        heartScaling < minScale ? (heartScaling = minScale) : false;
+
+        let newKeyframes = [{ transform: "scale(" + heartScaling + ")" }];
+
+        heartAnimation.updatePlaybackRate(bpm);
+        animationKeyframes.setKeyframes(newKeyframes);
+        bpmNumber.innerHTML = bpm;
+      }
+
+      function connect() {
+        var ws = new WebSocket("ws://127.0.0.1:8765/");
+
+        ws.onopen = function () {};
+
+        ws.onmessage = function (e) {
+          bpm = event.data.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+
+          updateBpm(bpm);
+
+          showBpm();
+        };
+
+        ws.onclose = function (e) {
+          hideBpm();
+          console.log(
+            "Socket is closed. Reconnect will be attempted in 1 second.",
+            e.reason
+          );
+          setTimeout(function () {
+            connect();
+          }, 1000);
+        };
+
+        ws.onerror = function (err) {
+          console.error(
+            "Socket encountered error: ",
+            err.message,
+            "Closing socket"
+          );
+          ws.close();
+        };
+      }
+
+      function aliveCheck() {
+        if (lastMessageTime + 10000 < Date.now() && lastMessageTime != false) {
+          hideBpm();
+          console.log("Haven't gotten new messages... hiding heartbeat");
+        }
+        setTimeout(aliveCheck, 5000);
+      }
+
+      window.onload = function () {
+        bpmContainer = document.querySelector(".bpm__container");
+        heart = document.querySelector(".heart");
+        bpmNumber = document.querySelector(".bpm-number");
+
+        animationKeyframes = new KeyframeEffect(
+          heart,
+          [{ transform: "scale(" + minScale + ")" }],
+          {
+            duration: 30000,
+            iterations: Infinity,
+            direction: "alternate",
+            easing: "ease-out",
+          }
+        );
+
+        heartAnimation = new Animation(animationKeyframes, document.timeline);
+
+        heartAnimation.play();
+
+        connect();
+        aliveCheck();
+      };
+    </script>
     <style>
       :root {
         --font-size: 5rem;
@@ -16,6 +130,7 @@
       .bpm__container {
         display: flex;
         align-items: center;
+        opacity: 0;
       }
 
       .bpm-number {
@@ -32,6 +147,16 @@
 
       .heart path {
         fill: #e00;
+      }
+
+      .hide {
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+
+      .show {
+        opacity: 1;
+        transition: opacity 0.5s ease;
       }
     </style>
   </head>
@@ -54,92 +179,5 @@
       </div>
       <div class="bpm-number"></div>
     </div>
-    <script>
-      Number.prototype.map = function (in_min, in_max, out_min, out_max) {
-        return (
-          ((this - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min
-        );
-      };
-
-      let heart = document.querySelector(".heart");
-      let bpmNumber = document.querySelector(".bpm-number");
-
-      // const animationKeyframes = [{ transform: "scale(1.2)" }];
-
-      let animationKeyframes = new KeyframeEffect(
-        heart,
-        [{ transform: "scale(1.2)" }],
-        {
-          duration: 30000,
-          iterations: Infinity,
-          direction: "alternate",
-          easing: "ease-out",
-        }
-      );
-
-      // const animationOptions = {
-      //   duration: 30000,
-      //   iterations: Infinity,
-      //   direction: "alternate",
-      //   easing: "ease-out",
-      // };
-
-      let heartAnimation = new Animation(animationKeyframes, document.timeline);
-
-      heartAnimation.play();
-
-      function updateBpm(bpmArray) {
-        count = bpmArray[0];
-        datestring = bpmArray[1];
-        bpm = Number(bpmArray[3]);
-        min = bpmArray[4];
-        max = bpmArray[5];
-
-        let heartScaling = Math.round(bpm.map(60, 200, 1.1, 1.8) * 100) / 100;
-
-        heartScaling > 1.8 ? (heartScaling = 1.8) : false;
-        heartScaling < 1.1 ? (heartScaling = 1.1) : false;
-
-        console.log(heartScaling);
-        let newKeyframes = [{ transform: "scale(" + heartScaling + ")" }];
-
-        heartAnimation.updatePlaybackRate(bpm);
-        animationKeyframes.setKeyframes(newKeyframes);
-        bpmNumber.innerHTML = bpm;
-      }
-
-      function connect() {
-        var ws = new WebSocket("ws://127.0.0.1:8765/");
-
-        ws.onopen = function () {};
-
-        ws.onmessage = function (e) {
-          bpm = event.data.split(";");
-
-          updateBpm(bpm);
-        };
-
-        ws.onclose = function (e) {
-          console.log(
-            "Socket is closed. Reconnect will be attempted in 1 second.",
-            e.reason
-          );
-          setTimeout(function () {
-            connect();
-          }, 1000);
-        };
-
-        ws.onerror = function (err) {
-          console.error(
-            "Socket encountered error: ",
-            err.message,
-            "Closing socket"
-          );
-          ws.close();
-        };
-      }
-
-      connect();
-    </script>
   </body>
 </html>
