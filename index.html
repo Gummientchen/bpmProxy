@@ -37,8 +37,6 @@
         lastMessageTime = Number(bpmArray[0]);
         bpm = Number(bpmArray[2]);
 
-        // console.log(Date.now(), datetime, (Date.now() - datetime) / 1000);
-
         let heartScaling =
           Math.round(bpm.map(minBpm, maxBpm, minScale, maxScale) * 100) / 100;
 
@@ -58,7 +56,6 @@
         ws.onopen = function () {};
 
         ws.onmessage = function (e) {
-          // bpm = event.data.split(",");
           bpm = event.data.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
 
           updateBpm(bpm);
